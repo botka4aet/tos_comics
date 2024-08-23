@@ -7,16 +7,22 @@ import (
 	"net/http"
 	"os"
 	"strings"
-	"sync"
 	"time"
-	"runtime"
+
+	"sync"	
 )
 
-var letterRunes = []rune("abcdefghijklmnopqrstuvwxyz")
-var letternumbersRunes = []rune("abcdefghijklmnopqrstuvwxyz0123456789")
+const (
+	locklen = 5
+	baseurl = "https://cdn.townofsins.com/media/assets/images/"
+)
 
 var mu sync.Mutex
 var tries_counter int
+
+
+var letterRunes = []rune("abcdefghijklmnopqrstuvwxyz")
+var letternumbersRunes = []rune("abcdefghijklmnopqrstuvwxyz0123456789")
 
 type Semaphore struct {
 	C chan struct{}
@@ -33,11 +39,10 @@ func (s *Semaphore) Release() {
 }
 
 var sem = Semaphore{
-	C: make(chan struct{}, 50),
+	C: make(chan struct{}, 20),
 }
 
 func main() {
-	fmt.Println(runtime.NumCPU())
 	var done = make(map[string]bool)
 
 	fdone, err := os.Open("txtfiles\\done.txt")
@@ -112,27 +117,54 @@ func main() {
 	fmt.Println("Need check - ", needcheck)
 	go func() {
 		for url, _ := range check {
+			ctime := time.Now()
 			fmt.Println("Bruteforcing ", url)
 			sgnlCh := make(chan struct{})
-			var link [5]int
+			var link [10]int
+			var scramble_len int
+			var url_suffix string
+			used_chars := letterRunes
+			if strings.HasPrefix(url, "comics/th/") {
+				used_chars = letternumbersRunes
+				url_suffix = "@2x.webp"
+			} else if strings.HasPrefix(url, "comics_adventure/th/") {
+				url_suffix = ".webp"
+			} else if strings.HasPrefix(url, "comics_events/th/") {
+				url_suffix = ".jpg"
+			}
+
+			scramble_len = len(used_chars)
 			for {
-				sem.Acquire()
-				go scramble_link(url, link, c, sgnlCh)
-				link[0] = 26
+				var cur_pass string
 				var loop bool
-				for i, _ := range link {
-					if link[i] >= 26 {
-						if i == len(link)-1 {
-							loop = true
+				var reset_pos int
+				for reset_pos != -1 {
+					cur_pass = ""
+					for i := locklen - 1; i >= 0; i-- {
+						if i < reset_pos {
+							link[i] = 0
+							//Если текущее значение больше предела
+						} else if link[i] >= scramble_len {
+							//Устанавливаем границу обнуления
+							reset_pos = i + 1
+							//Это предельное значение
+							if i == locklen-1 {
+								loop = true
+							}
+							link[i+1]++
+							if i == locklen-2 && link[i+1] < scramble_len {
+								//fmt.Println("Now trying " + string(letterRunes[link[locklen-1]]) + "****")
+								fmt.Printf("Now trying "+string(used_chars[link[locklen-1]])+"**** - %.2f min\n", time.Since(ctime).Seconds()/60)
+								ctime = time.Now()
+
+							}
 							break
 						}
-						link[i+1]++
-						if i+1 == 4 && link[4] < 26 {
-							fmt.Println("Now trying ****" + string(letterRunes[link[4]]))
+						if i == 0 {
+							reset_pos = -1
+							break
 						}
-						for j := 0; j <= i; j++ {
-							link[j] = 0
-						}
+						cur_pass = cur_pass + string(used_chars[link[i]])
 					}
 				}
 				select {
@@ -143,16 +175,21 @@ func main() {
 				if loop {
 					break
 				}
+				sem.Acquire()
+				go url_last_symbl(url+"_"+cur_pass, &used_chars, url_suffix, c, sgnlCh)
+				link[0] = 50
 			}
 		}
 	}()
+
 	go func() {
 		for {
 			time.Sleep(time.Minute)
 			c <- ""
 		}
-
 	}()
+
+
 	fi, err := os.OpenFile("txtfiles\\links.txt", os.O_RDWR|os.O_APPEND|os.O_CREATE, 0777)
 	if err != nil {
 		panic(err)
@@ -160,6 +197,7 @@ func main() {
 	defer fi.Close()
 	for {
 		text := <-c
+
 		switch text {
 		case "":
 			fmt.Println("Passed 1 min, tries - ", tries_counter*26)
@@ -172,50 +210,38 @@ func main() {
 				panic(err)
 			}
 		}
-
 	}
 }
 
-func scramble_link(url string, link [5]int, c chan string, sgnlCh chan struct{}) {
+func url_last_symbl(link string,used_chars *[]rune, url_suffix string, c chan string, sgnlCh chan struct{}) {
 	defer sem.Release()
-	for i := 0; i < 26; i++ {
-		select {
-		case <-sgnlCh:
-			return
-		default:
-		}
-		link[0] = i
-
-		var nlink string
-		for _, t := range link {
-			nlink += string(letterRunes[t])
-		}
-		check_url(url+"_"+nlink, c, sgnlCh)
+	select {
+	case <-sgnlCh:
+		return
+	default:
 	}
+	for i := 0; i < len(*used_chars); i++ {
+//		fmt.Println("Solved: " , i,string((*used_chars)[i]))
+		check_url(link+string((*used_chars)[i])+url_suffix, c, sgnlCh)
+	}
+
 }
 
 func check_url(link string, c chan string, sgnlCh chan struct{}) {
-	baseurl := "https://cdn.townofsins.com/media/assets/images/"
-	postfix := ""
-	if strings.HasPrefix(link, "comics_adventure/th/") {
-		postfix = ".webp"
-	} else if strings.HasPrefix(link, "comics_events/th/") {
-		postfix = ".jpg"
-		//	} else if strings.HasPrefix(link, "comics/th/") {
-		//		postfix = "@2x.webp"
-	}
-	if postfix == "" {
-		return
-	}
+
 	var client = &http.Client{}
 	var res *http.Response
+//	fmt.Println("Checking: " + baseurl + link)
 	for res == nil {
-		res, _ = client.Head(baseurl + link + postfix)
-		if res != nil && res.StatusCode == 200 {
+		res, _ = client.Head(baseurl + link)
+		if res == nil {
+			time.Sleep(time.Second)
+		} else if res.StatusCode == 200 {
 			fmt.Println("Solved: " + link)
-			c <- (link + postfix)
+			c <- (link)
 			close(sgnlCh)
+		} else {
+			break
 		}
-		time.Sleep(time.Second)
 	}
 }

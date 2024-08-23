@@ -9,7 +9,6 @@ import (
 	"strings"
 	"sync"
 	"time"
-	"runtime"
 )
 
 var letterRunes = []rune("abcdefghijklmnopqrstuvwxyz")
@@ -33,11 +32,10 @@ func (s *Semaphore) Release() {
 }
 
 var sem = Semaphore{
-	C: make(chan struct{}, 50),
+	C: make(chan struct{}, 1000),
 }
 
 func main() {
-	fmt.Println(runtime.NumCPU())
 	var done = make(map[string]bool)
 
 	fdone, err := os.Open("txtfiles\\done.txt")
@@ -162,7 +160,7 @@ func main() {
 		text := <-c
 		switch text {
 		case "":
-			fmt.Println("Passed 1 min, tries - ", tries_counter*26)
+			fmt.Println("Passed 1 hour, tries - ", tries_counter*26)
 			mu.Lock()
 			tries_counter = 0
 			mu.Unlock()
