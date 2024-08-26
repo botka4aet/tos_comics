@@ -115,6 +115,7 @@ func main() {
 			fmt.Println("Bruteforcing ", url)
 			sgnlCh := make(chan struct{})
 			var link [5]int
+			dtime := time.Now()
 			for {
 				sem.Acquire()
 				go scramble_link(url, link, c, sgnlCh)
@@ -128,7 +129,8 @@ func main() {
 						}
 						link[i+1]++
 						if i+1 == 4 && link[4] < 26 {
-							fmt.Println("Now trying ****" + string(letterRunes[link[4]]))
+							fmt.Printf("Now trying ****%v - %.0f\n",string(letterRunes[link[4]]),time.Since(dtime).Seconds())
+							dtime = time.Now()
 						}
 						for j := 0; j <= i; j++ {
 							link[j] = 0
