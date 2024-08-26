@@ -27,9 +27,9 @@ func (s *Semaphore) Acquire() {
 }
 func (s *Semaphore) Release() {
 	<-s.C
-	mu.Lock()
-	tries_counter++
-	mu.Unlock()
+	// mu.Lock()
+	// tries_counter++
+	// mu.Unlock()
 }
 
 var sem = Semaphore{
@@ -97,7 +97,7 @@ func main() {
 	for scanner.Scan() {
 		text := scanner.Text()
 		_, ok := done[text]
-		if ok {
+		if ok || strings.HasPrefix(text, "comics/th/") {
 			continue
 		}
 		_, ok = check[text]
@@ -146,13 +146,13 @@ func main() {
 			}
 		}
 	}()
-	go func() {
-		for {
-			time.Sleep(time.Minute)
-			c <- ""
-		}
+	// go func() {
+	// 	for {
+	// 		time.Sleep(time.Minute)
+	// 		c <- ""
+	// 	}
 
-	}()
+	// }()
 	fi, err := os.OpenFile("txtfiles\\links.txt", os.O_RDWR|os.O_APPEND|os.O_CREATE, 0777)
 	if err != nil {
 		panic(err)
@@ -215,6 +215,8 @@ func check_url(link string, c chan string, sgnlCh chan struct{}) {
 			fmt.Println("Solved: " + link)
 			c <- (link + postfix)
 			close(sgnlCh)
+		} else if res != nil && res.StatusCode == 500 {
+			break
 		}
 		time.Sleep(time.Second)
 	}
