@@ -1,15 +1,14 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 	"strings"
 	"sync"
 	"time"
 	"runtime"
+	"math"
 )
 
 var letterRunes = []rune("abcdefghijklmnopqrstuvwxyz")
@@ -38,78 +37,8 @@ var sem = Semaphore{
 
 func main() {
 	fmt.Println(runtime.NumCPU())
-	var done = make(map[string]bool)
-
-	fdone, err := os.Open("txtfiles\\done.txt")
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer fdone.Close()
-	scanner := bufio.NewScanner(fdone)
-	for scanner.Scan() {
-		text := scanner.Text()
-		_, ok := done[text]
-		if ok {
-			continue
-		}
-		done[text] = true
-	}
-	fdone.Close()
-	file, err := os.Open("txtfiles\\links.txt")
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer file.Close()
-	fdone, err = os.OpenFile("txtfiles\\done.txt", os.O_RDWR|os.O_APPEND|os.O_CREATE, 0777)
-	if err != nil {
-		panic(err)
-	}
-	defer fdone.Close()
-
-	scanner = bufio.NewScanner(file)
-	for scanner.Scan() {
-		text := scanner.Text()
-		ntext := strings.TrimSuffix(text, "@2x.webp")
-		ntext = strings.TrimSuffix(ntext, ".webp")
-		ntext = strings.TrimSuffix(ntext, ".jpg")
-		if text != ntext {
-			text = ntext[:len(ntext)-6]
-		}
-		_, ok := done[text]
-		if ok {
-			continue
-		}
-		_, err = fdone.WriteString(text + "\n")
-		if err != nil {
-			panic(err)
-		}
-		done[text] = true
-	}
-
-	var needcheck int
-	file, err = os.Open("txtfiles\\check.txt")
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer file.Close()
-	scanner = bufio.NewScanner(file)
-	var check = make(map[string]bool)
-	for scanner.Scan() {
-		text := scanner.Text()
-		_, ok := done[text]
-		if ok || strings.HasPrefix(text, "comics/th/") {
-			continue
-		}
-		_, ok = check[text]
-		if ok {
-			continue
-		}
-		check[text] = true
-		needcheck++
-	}
 
 	c := make(chan string)
-	fmt.Println("Need check - ", needcheck)
 	go func() {
 		for url, _ := range check {
 			fmt.Println("Bruteforcing ", url)
@@ -129,7 +58,7 @@ func main() {
 						}
 						link[i+1]++
 						if i+1 == 4 && link[4] < 26 {
-							fmt.Printf("Now trying ****%v - %.0f\n",string(letterRunes[link[4]]),time.Since(dtime).Seconds())
+							fmt.Printf("%v Now trying ****%v. Speed - %.2f per second\n",time.Now().Format("[15:04:05]"),string(letterRunes[link[4]]),float64(math.Pow(26, 5))/float64(runtime.NumCPU())/time.Since(dtime).Seconds())
 							dtime = time.Now()
 						}
 						for j := 0; j <= i; j++ {
@@ -217,6 +146,7 @@ func check_url(link string, c chan string, sgnlCh chan struct{}) {
 			fmt.Println("Solved: " + link)
 			c <- (link + postfix)
 			close(sgnlCh)
+			return
 		} else if res != nil && res.StatusCode == 500 {
 			break
 		}
