@@ -2,15 +2,16 @@ package main
 
 import (
 	"fmt"
-	"net/http"
+	"crypto/tls"
 	"os"
-	"strings"
-	"math"
 	"runtime"
+	"strings"
+	"sync"
 	"time"
+	"net"
 )
 
-var baseurl = "https://cdn.townofsins.com/media/assets/images/"
+var mutex = &sync.Mutex{}
 
 type Semaphore struct {
 	C chan struct{}
@@ -24,93 +25,83 @@ func (s *Semaphore) Release() {
 }
 
 var sem = Semaphore{
-	C: make(chan struct{}, 50),
+	C: make(chan struct{}, runtime.NumCPU()),
 }
 
 func main() {
 	fmt.Println(runtime.NumCPU())
+	fi, _ := os.OpenFile("txtfiles\\links.txt", os.O_RDWR|os.O_APPEND|os.O_CREATE, 0777)
+	defer fi.Close()
 
 	for url, _ := range check {
-		fmt.Println("Bruteforcing ", url)
-		sgnlCh := make(chan struct{})
-		var link [5]int
-		var sufix string
-		var letterRunes []rune
-		if strings.HasPrefix(url, "comics_adventure/th/") {
-			sufix = ".webp"
-			letterRunes = []rune("abcdefghijklmnopqrstuvwxyz")
-		} else if strings.HasPrefix(url, "comics_events/th/") {
-			sufix = ".jpg"
-			letterRunes = []rune("abcdefghijklmnopqrstuvwxyz")
-		} else if strings.HasPrefix(url, "comics/th/") {
-			sufix = "@2x.webp"
-			letterRunes = []rune("abcdefghijklmnopqrstuvwxyz0123456789")
-		}
-		lenr := len(letterRunes)
+		sem.Acquire()
+		go func() {
+			defer sem.Release()
+			fmt.Println("Bruteforcing ", url)
+			var suffix string
+			var letterRunes []rune
+			if strings.HasPrefix(url, "comics_adventure/th/") {
+				suffix = ".webp"
+				letterRunes = []rune("abcdefghijklmnopqrstuvwxyz")
+			} else if strings.HasPrefix(url, "comics_events/th/") {
+				suffix = ".jpg"
+				letterRunes = []rune("abcdefghijklmnopqrstuvwxyz")
+			} else if strings.HasPrefix(url, "comics/th/") {
+				suffix = "@2x.webp"
+				letterRunes = []rune("0123456789abcdefghijklmnopqrstuvwxyz")
+			}
 
-		dtime := time.Now()
-		for {
-			sem.Acquire()
-			go scramble_link(url, sufix, &letterRunes, lenr, link, sgnlCh)
-			link[0] = lenr
-			var loop bool
-			for i, _ := range link {
-				if link[i] >= lenr {
-					if i == len(link)-1 {
-						loop = true
+			dtime := time.Now()
+			var counter int
+			client, _ := tls.DialWithDialer(&net.Dialer{Timeout: 5*time.Second},"tcp", "cdn.townofsins.com:443", &tls.Config{})
+			ch := make(chan string, 10)
+			go ch_scramble("", &letterRunes, 4, ch)
+
+			var answer string
+
+			for {
+				result := <-ch
+				for {
+					data := []byte("HEAD /media/assets/images/" + url +"_"+ result + suffix + " HTTP/1.1\r\nHost: cdn.townofsins.com\r\n\r\n")
+					client.Write(data)
+					buf := make([]byte, 250)
+					client.Read(buf)
+					answer = string(buf[:])
+					if strings.HasPrefix(answer, "\x00") {
+						client, _ = tls.Dial("tcp", "cdn.townofsins.com:443", &tls.Config{})
+					} else if strings.HasPrefix(answer, "HTTP/1.1 500") {
+						break
+					} else if strings.HasPrefix(answer, "HTTP/1.1 200") {
+							close(ch)
+							mutex.Lock()
+							_, _ = fi.WriteString(url +"_"+ result + suffix + "\n")
+							mutex.Unlock()
+							result = "zzzzz"
 						break
 					}
-					link[i+1]++
-					if i+1 == 4 && link[4] < lenr {
-						fmt.Printf("%v Now trying ****%v. Speed - %.2f per second\n", time.Now().Format("[15:04:05]"), string(letterRunes[link[4]]), float64(math.Pow(26, 4))/float64(runtime.NumCPU())/time.Since(dtime).Seconds())
-						dtime = time.Now()
-					}
-					for j := 0; j <= i; j++ {
-						link[j] = 0
-					}
+				}
+				if result == "zzzzz" { 
+					break 
+				} else if counter == 10000 { 
+					fmt.Printf("%v[%v]Speed - %.2f per second\n", time.Now().Format("[15:04:05]"), url, 10000/time.Since(dtime).Seconds())
+					dtime = time.Now()
+					counter = 0
+				} else {
+					 counter++
 				}
 			}
-			select {
-			case <-sgnlCh:
-				loop = true
-			default:
-			}
-			if loop {
-				break
-			}
-		}
+		}()
 	}
 }
 
-func scramble_link(url string, sufix string, runes *[]rune, lenr int, link [5]int, sgnlCh chan struct{}) {
-	defer sem.Release()
-	for i := 0; i < lenr; i++ {
-		link[0] = i
-		var nlink string
-		for _, t := range link {
-			nlink += string((*runes)[t])
+func ch_scramble(suffix string, runes *[]rune, step int,Ch chan string){
+	var i int
+	for i < len(*runes) {
+		if step > 0 {
+			ch_scramble(string((*runes)[i])+suffix, runes, step-1, Ch)
+		} else {
+			Ch<-string((*runes)[i])+suffix
 		}
-		check_url(url+"_"+nlink+sufix, sgnlCh)
-	}
-}
-
-func check_url(link string, sgnlCh chan struct{}) {
-	var client = &http.Client{}
-	var res *http.Response
-	for res == nil {
-		res, _ = client.Head(baseurl + link)
-		if res != nil && res.StatusCode == 200 {
-			fmt.Println("Solved: " + link)
-			fi, err := os.OpenFile("txtfiles\\links.txt", os.O_RDWR|os.O_APPEND|os.O_CREATE, 0777)
-			if err == nil {
-				_, _ = fi.WriteString(link + "\n")
-			}
-			defer fi.Close()
-			close(sgnlCh)
-			return
-		} else if res != nil && res.StatusCode == 500 {
-			break
-		}
-		time.Sleep(time.Second)
+		i++
 	}
 }

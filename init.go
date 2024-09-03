@@ -69,7 +69,7 @@ func init() {
 	for scanner.Scan() {
 		text := scanner.Text()
 		_, ok := done[text]
-		if ok || strings.HasPrefix(text, "comics/th/") {
+		if ok || strings.HasPrefix(text, "comics/th/") || !strings.HasSuffix(text, "_15") {
 			continue
 		}
 		_, ok = check[text]
