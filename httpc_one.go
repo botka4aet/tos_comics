@@ -35,7 +35,7 @@ func httpc_one() {
 		conn := &http.Client{
 			//	Timeout:   4 * time.Second,
 		}
-		
+
 		for i := 0; i < runtime.NumCPU(); i++ {
 			go func() {
 				for {
@@ -98,26 +98,23 @@ func httpc_one_fh() {
 			req.Header.SetMethod("HEAD")
 			go func() {
 				for {
-					result := <-ch
+					result, ok := <-ch
+					if !ok {
+						return
+					}
 					for {
 						req.SetRequestURI("https://cdn.townofsins.com/media/assets/images/" + url + "_" + result + suffix)
 						err := fasthttp.Do(req, resp)
 						if err == nil && resp.StatusCode() == 200 {
-							close(ch_close)
 							_, _ = fi.WriteString(url + "_" + result + suffix + "\n")
-							result = "zzzzz"
-							select {
-							case <-ch:
-								return
-							default:
-							}
+							close(ch_close)
 							break
 						} else if err == nil && resp.StatusCode() == 500 {
+							if result == "zzzzz" {
+								close(ch_close)
+							}
 							break
 						}
-					}
-					if result == "zzzzz" {
-						break
 					}
 				}
 			}()

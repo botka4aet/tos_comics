@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-var speed_counter = 1000
+var speed_counter = 100000
 var timer_g time.Time
 var counter_g int
 var mutex = &sync.Mutex{}
@@ -52,7 +52,9 @@ func ch_scramble_o(suffix string, runes *[]rune, step int, ch chan string, ch_cl
 	for i < len(*runes) {
 		select {
 		case <-ch_close:
-			close(ch)
+			if step == 0 {
+				close(ch)
+			}
 			return
 		default:
 		}

@@ -42,7 +42,10 @@ func dial_all() {
 			buf := make([]byte, 1000)
 
 			for {
-				result := <-ch
+				result, ok := <-ch
+				if !ok {
+					return
+				}
 				for {
 					data := []byte("HEAD /media/assets/images/" + url + "_" + result + suffix + " HTTP/1.1\r\nHost: cdn.townofsins.com\r\n\r\n")
 					if strings.HasPrefix(answer, "\x00") || err != nil {
@@ -61,37 +64,37 @@ func dial_all() {
 					}
 					answer = string(buf[:])
 					if strings.HasPrefix(answer, "HTTP/1.1 500") {
+						if result == "zzzzz" {
+							close(ch_close)
+						}
 						break
 					} else if strings.HasPrefix(answer, "HTTP/1.1 200") {
-						close(ch_close)
 						mutex.Lock()
 						_, _ = fi.WriteString(url + "_" + result + suffix + "\n")
 						mutex.Unlock()
-						result = "zzzzz"
+						close(ch_close)
 						break
 					}
 				}
-				if result == "zzzzz" {
-					break
-				} else if counter == speed_counter {
+				counter++
+				if counter >= speed_counter {
 					counter = 0
 					fmt.Printf("%v[%v]Speed - %.2f per second.\n", time.Now().Format("[15:04:05]"), url, float64(speed_counter)/time.Since(dtime).Seconds())
 					dtime = time.Now()
-				} else {
-					counter++
 				}
 			}
 		}()
 	}
 }
 
-
 func ch_scramble_da(suffix string, runes *[]rune, step int, ch chan string, ch_close chan bool) {
 	var i int
 	for i < len(*runes) {
 		select {
 		case <-ch_close:
-			close(ch)
+			if step == 0 {
+				close(ch)
+			}
 			return
 		default:
 		}

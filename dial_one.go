@@ -42,7 +42,10 @@ func dial_one() {
 				buf := make([]byte, 1000)
 
 				for {
-					result := <-ch
+					result, ok := <-ch
+					if !ok {
+						return
+					}
 					for {
 						data := []byte("HEAD /media/assets/images/" + url + "_" + result + suffix + " HTTP/1.1\r\nHost: cdn.townofsins.com\r\n\r\n")
 						if strings.HasPrefix(answer, "\x00") || err != nil {
@@ -61,22 +64,17 @@ func dial_one() {
 						}
 						answer = string(buf[:])
 						if strings.HasPrefix(answer, "HTTP/1.1 500") {
+							if result == "zzzzz" {
+								close(ch_close)
+							}
 							break
 						} else if strings.HasPrefix(answer, "HTTP/1.1 200") {
 							close(ch_close)
 							_, _ = fi.WriteString(url + "_" + result + suffix + "\n")
-							result = "zzzzz"
-							select {
-							case <-ch:
-								return
-							default:
-							}
+							close(ch_close)
 							break
 						}
 					}
-					if result == "zzzzz" {
-						break
-					}  
 				}
 			}()
 		}
