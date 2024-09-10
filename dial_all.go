@@ -13,7 +13,7 @@ func dial_all() {
 	fi, _ := os.OpenFile("txtfiles\\links.txt", os.O_RDWR|os.O_APPEND|os.O_CREATE, 0777)
 	defer fi.Close()
 
-	for url, _ := range Check {
+	for url, _ := range сheck {
 		sem.Acquire()
 		go func() {
 			defer sem.Release()

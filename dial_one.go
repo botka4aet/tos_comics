@@ -10,9 +10,6 @@ import (
 	"time"
 )
 
-var time_do time.Time
-var counter_do int
-
 func dial_one() {
 	fi, _ := os.OpenFile("txtfiles\\links.txt", os.O_RDWR|os.O_APPEND|os.O_CREATE, 0777)
 	defer fi.Close()
@@ -78,7 +75,6 @@ func dial_one() {
 				}
 			}()
 		}
-		time_do = time.Now()
 		ch_scramble_o("", &letterRunes, 4, ch, ch_close)
 	}
 }

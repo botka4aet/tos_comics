@@ -2,16 +2,22 @@ package main
 
 import (
 	"bufio"
+	"flag"
 	"fmt"
 	"log"
 	"os"
 	"strings"
 )
 
-var check = make(map[string]bool)
+var сheck = make(map[string]bool)
+var imode int
 
 func init() {
 	var done = make(map[string]bool)
+	suffix := flag.String("suffix", "", "Отбор строк")
+	mode := flag.Int("mode", 0, "Режим перебора")
+	flag.Parse()
+	imode = *mode
 
 	fdone, err := os.Open("txtfiles\\done.txt")
 	if err != nil {
@@ -69,14 +75,14 @@ func init() {
 	for scanner.Scan() {
 		text := scanner.Text()
 		_, ok := done[text]
-		if ok || strings.HasPrefix(text, "comics/th/") || !strings.HasSuffix(text, "_15") {
+		if ok || strings.HasPrefix(text, "comics/th/") || !strings.HasSuffix(text, *suffix) {
 			continue
 		}
-		_, ok = check[text]
+		_, ok = сheck[text]
 		if ok {
 			continue
 		}
-		check[text] = true
+		сheck[text] = true
 		needcheck++
 	}
 	fmt.Println("Need check - ", needcheck)

@@ -14,7 +14,7 @@ func httpc_one() {
 	fi, _ := os.OpenFile("txtfiles\\links.txt", os.O_RDWR|os.O_APPEND|os.O_CREATE, 0777)
 	defer fi.Close()
 
-	for url, _ := range Check {
+	for url, _ := range сheck {
 		fmt.Println("Bruteforcing ", url)
 		var suffix string
 		var letterRunes []rune
@@ -71,7 +71,7 @@ func httpc_one_fh() {
 	fi, _ := os.OpenFile("txtfiles\\links.txt", os.O_RDWR|os.O_APPEND|os.O_CREATE, 0777)
 	defer fi.Close()
 
-	for url, _ := range Check {
+	for url, _ := range сheck {
 		fmt.Println("Bruteforcing ", url)
 		var suffix string
 		var letterRunes []rune

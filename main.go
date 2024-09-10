@@ -1,7 +1,6 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"runtime"
 	"sync"
@@ -31,10 +30,7 @@ var sem = Semaphore{
 func main() {
 	fmt.Println(runtime.NumCPU())
 
-	mode := flag.Int("mode", 0, "Режим перебора")
-	flag.Parse()
-
-	switch *mode {
+	switch imode {
 	case 1:
 		dial_one()
 	case 2:
