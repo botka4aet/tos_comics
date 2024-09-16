@@ -66,7 +66,6 @@ func dial_one() {
 							}
 							break
 						} else if strings.HasPrefix(answer, "HTTP/1.1 200") {
-							close(ch_close)
 							_, _ = fi.WriteString(url + "_" + result + suffix + "\n")
 							close(ch_close)
 							break
