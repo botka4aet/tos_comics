@@ -50,6 +50,7 @@ func ch_scramble_o(suffix string, runes *[]rune, step int, ch chan string, ch_cl
 		case <-ch_close:
 			if step == 0 {
 				close(ch)
+				counter_g = 0
 			}
 			return
 		default:

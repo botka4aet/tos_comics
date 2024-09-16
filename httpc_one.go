@@ -39,25 +39,27 @@ func httpc_one() {
 		for i := 0; i < runtime.NumCPU(); i++ {
 			go func() {
 				for {
-					result := <-ch
+					result, ok := <-ch
+					if !ok {
+						return
+					}
 					for {
-						res, _ := conn.Head("https://cdn.townofsins.com/media/assets/images/" + url + "_" + result + suffix)
-						if res != nil && res.StatusCode == 200 {
-							close(ch_close)
+						res, err := conn.Head("https://cdn.townofsins.com/media/assets/images/" + url + "_" + result + suffix)
+						if err == nil && res != nil && res.StatusCode == 200 {
 							_, _ = fi.WriteString(url + "_" + result + suffix + "\n")
-							result = "zzzzz"
+							close(ch_close)
 							select {
 							case <-ch:
 								return
 							default:
 							}
 							break
-						} else if res != nil && res.StatusCode == 500 {
+						} else if err == nil && res != nil && res.StatusCode == 500 {
+							if result == "zzzzz" {
+								close(ch_close)
+							}
 							break
 						}
-					}
-					if result == "zzzzz" {
-						break
 					}
 				}
 			}()
