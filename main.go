@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"runtime"
+	"strings"
 	"sync"
 	"time"
 )
@@ -11,6 +12,9 @@ var speed_counter = 100000
 var timer_g time.Time
 var counter_g int
 var mutex = &sync.Mutex{}
+
+var letterRunes = []rune("abcdefghijklmnopqrstuvwxyz")
+var letternRunes = []rune("0123456789abcdefghijklmnopqrstuvwxyz")
 
 type Semaphore struct {
 	C chan struct{}
@@ -68,4 +72,18 @@ func ch_scramble_o(suffix string, runes *[]rune, step int, ch chan string, ch_cl
 		}
 		i++
 	}
+}
+
+func get_suffix_rune(url string) (suffix string, runes *[]rune) {
+	if strings.HasPrefix(url, "comics_adventure/th/") {
+		suffix = ".webp"
+		runes = &letterRunes
+	} else if strings.HasPrefix(url, "comics_events/th/") || strings.HasPrefix(url, "comics_mythic/th/") {
+		suffix = ".jpg"
+		runes = &letterRunes
+	} else if strings.HasPrefix(url, "comics/th/") {
+		suffix = "@2x.webp"
+		runes = &letternRunes
+	}
+	return
 }

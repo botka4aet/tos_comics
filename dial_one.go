@@ -11,23 +11,14 @@ import (
 )
 
 func dial_one() {
-	fi, _ := os.OpenFile("txtfiles\\links.txt", os.O_RDWR|os.O_APPEND|os.O_CREATE, 0777)
-	defer fi.Close()
+	fd, _ := os.OpenFile("txtfiles\\links.txt", os.O_RDWR|os.O_APPEND|os.O_CREATE, 0777)
+	defer fd.Close()
+	ff, _ := os.OpenFile("txtfiles\\failed.txt", os.O_RDWR|os.O_APPEND|os.O_CREATE, 0777)
+	defer ff.Close()
 
 	for url, _ := range сheck {
 		fmt.Println("Bruteforcing ", url)
-		var suffix string
-		var letterRunes []rune
-		if strings.HasPrefix(url, "comics_adventure/th/") {
-			suffix = ".webp"
-			letterRunes = []rune("abcdefghijklmnopqrstuvwxyz")
-		} else if strings.HasPrefix(url, "comics_events/th/") {
-			suffix = ".jpg"
-			letterRunes = []rune("abcdefghijklmnopqrstuvwxyz")
-		} else if strings.HasPrefix(url, "comics/th/") {
-			suffix = "@2x.webp"
-			letterRunes = []rune("0123456789abcdefghijklmnopqrstuvwxyz")
-		}
+		suffix, runes := get_suffix_rune(url)
 
 		ch := make(chan string, 50)
 		ch_close := make(chan bool)
@@ -62,11 +53,12 @@ func dial_one() {
 						answer = string(buf[:])
 						if strings.HasPrefix(answer, "HTTP/1.1 500") {
 							if result == "zzzzz" {
+								_, _ = ff.WriteString(url + "\n")
 								close(ch_close)
 							}
 							break
 						} else if strings.HasPrefix(answer, "HTTP/1.1 200") {
-							_, _ = fi.WriteString(url + "_" + result + suffix + "\n")
+							_, _ = fd.WriteString(url + "_" + result + suffix + "\n")
 							close(ch_close)
 							break
 						}
@@ -74,6 +66,6 @@ func dial_one() {
 				}
 			}()
 		}
-		ch_scramble_o("", &letterRunes, 4, ch, ch_close)
+		ch_scramble_o("", runes, 4, ch, ch_close)
 	}
 }

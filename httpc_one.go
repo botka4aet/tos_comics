@@ -6,28 +6,18 @@ import (
 	"net/http"
 	"os"
 	"runtime"
-	"strings"
 	"time"
 )
 
 func httpc_one() {
-	fi, _ := os.OpenFile("txtfiles\\links.txt", os.O_RDWR|os.O_APPEND|os.O_CREATE, 0777)
-	defer fi.Close()
+	fd, _ := os.OpenFile("txtfiles\\links.txt", os.O_RDWR|os.O_APPEND|os.O_CREATE, 0777)
+	defer fd.Close()
+	ff, _ := os.OpenFile("txtfiles\\failed.txt", os.O_RDWR|os.O_APPEND|os.O_CREATE, 0777)
+	defer ff.Close()
 
 	for url, _ := range сheck {
 		fmt.Println("Bruteforcing ", url)
-		var suffix string
-		var letterRunes []rune
-		if strings.HasPrefix(url, "comics_adventure/th/") {
-			suffix = ".webp"
-			letterRunes = []rune("abcdefghijklmnopqrstuvwxyz")
-		} else if strings.HasPrefix(url, "comics_events/th/") {
-			suffix = ".jpg"
-			letterRunes = []rune("abcdefghijklmnopqrstuvwxyz")
-		} else if strings.HasPrefix(url, "comics/th/") {
-			suffix = "@2x.webp"
-			letterRunes = []rune("0123456789abcdefghijklmnopqrstuvwxyz")
-		}
+		suffix, runes := get_suffix_rune(url)
 
 		ch := make(chan string, 50)
 		ch_close := make(chan bool)
@@ -46,7 +36,7 @@ func httpc_one() {
 					for {
 						res, err := conn.Head("https://cdn.townofsins.com/media/assets/images/" + url + "_" + result + suffix)
 						if err == nil && res != nil && res.StatusCode == 200 {
-							_, _ = fi.WriteString(url + "_" + result + suffix + "\n")
+							_, _ = fd.WriteString(url + "_" + result + suffix + "\n")
 							close(ch_close)
 							select {
 							case <-ch:
@@ -56,6 +46,7 @@ func httpc_one() {
 							break
 						} else if err == nil && res != nil && res.StatusCode == 500 {
 							if result == "zzzzz" {
+								_, _ = ff.WriteString(url + "\n")
 								close(ch_close)
 							}
 							break
@@ -65,28 +56,19 @@ func httpc_one() {
 			}()
 		}
 		timer_g = time.Now()
-		ch_scramble_o("", &letterRunes, 4, ch, ch_close)
+		ch_scramble_o("", runes, 4, ch, ch_close)
 	}
 }
 
 func httpc_one_fh() {
-	fi, _ := os.OpenFile("txtfiles\\links.txt", os.O_RDWR|os.O_APPEND|os.O_CREATE, 0777)
-	defer fi.Close()
+	fd, _ := os.OpenFile("txtfiles\\links.txt", os.O_RDWR|os.O_APPEND|os.O_CREATE, 0777)
+	defer fd.Close()
+	ff, _ := os.OpenFile("txtfiles\\failed.txt", os.O_RDWR|os.O_APPEND|os.O_CREATE, 0777)
+	defer ff.Close()
 
 	for url, _ := range сheck {
 		fmt.Println("Bruteforcing ", url)
-		var suffix string
-		var letterRunes []rune
-		if strings.HasPrefix(url, "comics_adventure/th/") {
-			suffix = ".webp"
-			letterRunes = []rune("abcdefghijklmnopqrstuvwxyz")
-		} else if strings.HasPrefix(url, "comics_events/th/") {
-			suffix = ".jpg"
-			letterRunes = []rune("abcdefghijklmnopqrstuvwxyz")
-		} else if strings.HasPrefix(url, "comics/th/") {
-			suffix = "@2x.webp"
-			letterRunes = []rune("0123456789abcdefghijklmnopqrstuvwxyz")
-		}
+		suffix, runes := get_suffix_rune(url)
 
 		ch := make(chan string, 50)
 		ch_close := make(chan bool)
@@ -108,11 +90,12 @@ func httpc_one_fh() {
 						req.SetRequestURI("https://cdn.townofsins.com/media/assets/images/" + url + "_" + result + suffix)
 						err := fasthttp.Do(req, resp)
 						if err == nil && resp.StatusCode() == 200 {
-							_, _ = fi.WriteString(url + "_" + result + suffix + "\n")
+							_, _ = fd.WriteString(url + "_" + result + suffix + "\n")
 							close(ch_close)
 							break
 						} else if err == nil && resp.StatusCode() == 500 {
 							if result == "zzzzz" {
+								_, _ = ff.WriteString(url + "\n")
 								close(ch_close)
 							}
 							break
@@ -122,6 +105,6 @@ func httpc_one_fh() {
 			}()
 		}
 		timer_g = time.Now()
-		ch_scramble_o("", &letterRunes, 4, ch, ch_close)
+		ch_scramble_o("", runes, 4, ch, ch_close)
 	}
 }
