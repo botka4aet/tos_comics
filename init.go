@@ -34,6 +34,7 @@ func init() {
 		done[text] = true
 	}
 	fdone.Close()
+
 	file, err := os.Open("txtfiles\\links.txt")
 	if err != nil {
 		log.Fatal(err)
@@ -44,7 +45,6 @@ func init() {
 		panic(err)
 	}
 	defer fdone.Close()
-
 	scanner = bufio.NewScanner(file)
 	for scanner.Scan() {
 		text := scanner.Text()
@@ -75,7 +75,7 @@ func init() {
 	for scanner.Scan() {
 		text := scanner.Text()
 		_, ok := done[text]
-		if ok || strings.HasPrefix(text, "comics/th/") || !strings.HasSuffix(text, *suffix) {
+		if ok || strings.HasPrefix(text, "comics/th/") || strings.HasPrefix(text, "comics_mythic/th/") || !strings.HasSuffix(text, *suffix) {
 			continue
 		}
 		_, ok = сheck[text]
@@ -84,6 +84,22 @@ func init() {
 		}
 		сheck[text] = true
 		needcheck++
+	}
+
+	ffail, err := os.Open("txtfiles\\failed.txt")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer ffail.Close()
+	scanner = bufio.NewScanner(ffail)
+	for scanner.Scan() {
+		text := scanner.Text()
+		_, ok := сheck[text]
+		if !ok {
+			continue
+		}
+		delete(сheck, text)
+		needcheck--
 	}
 	fmt.Println("Need check - ", needcheck)
 }
