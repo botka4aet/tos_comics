@@ -7,17 +7,25 @@ import (
 	"log"
 	"os"
 	"strings"
+	"slices"
 )
 
 var сheck = make(map[string]bool)
-var imode int
+var checka []string
+var gmodef int
+var gmodes bool
 
 func init() {
 	var done = make(map[string]bool)
-	suffix := flag.String("suffix", "", "Отбор строк")
-	mode := flag.Int("mode", 0, "Режим перебора")
+	suffixo := flag.String("suffix", "", "Отбор строк")
+	modeo := flag.Int("mode", 0, "Режим перебора")
+	//Нужно ли сортировать? 0 - нет, 1 - да, 2 - сортировать по суффиксу, 3 - реверс по суффиксу
+	sorto := flag.Int("sort", 0, "Режим сортировки")
 	flag.Parse()
-	imode = *mode
+	gmodef = *modeo
+	if *sorto > 1 {
+		gmodes = true
+	}
 
 	fdone, err := os.Open("txtfiles\\done.txt")
 	if err != nil {
@@ -75,7 +83,7 @@ func init() {
 	for scanner.Scan() {
 		text := scanner.Text()
 		_, ok := done[text]
-		if ok || strings.HasPrefix(text, "comics/th/") || strings.HasPrefix(text, "comics_mythic/th/") || !strings.HasSuffix(text, *suffix) {
+		if ok || strings.HasPrefix(text, "comics/th/") || strings.HasPrefix(text, "comics_mythic/th/") || !strings.HasSuffix(text, *suffixo) {
 			continue
 		}
 		_, ok = сheck[text]
@@ -100,6 +108,26 @@ func init() {
 		}
 		delete(сheck, text)
 		needcheck--
+	}
+	for url, _ := range сheck {
+		if *sorto > 1 {
+			tpos := strings.LastIndex(url, "_")
+			if tpos != -1 {
+				numb := url[tpos+1:]
+				if len(numb) == 1 {
+					numb = "0"+numb
+				}
+				url = numb+":"+url		
+			}
+		}
+		checka = append(checka, url)
+	}
+	switch *sorto {
+	case 1,2:
+		slices.Sort(checka)
+	case 3:
+		slices.Sort(checka)
+		slices.Reverse(checka)
 	}
 	fmt.Println("Need check - ", needcheck)
 }

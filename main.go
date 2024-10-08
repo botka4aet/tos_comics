@@ -34,7 +34,7 @@ var sem = Semaphore{
 func main() {
 	fmt.Println(runtime.NumCPU())
 
-	switch imode {
+	switch gmodef {
 	case 1:
 		dial_one()
 	case 2:
@@ -86,4 +86,8 @@ func get_suffix_rune(url string) (suffix string, runes *[]rune) {
 		runes = &letternRunes
 	}
 	return
+}
+
+func clear_url(url string) string {
+	return url[strings.Index(url, ":")+1:]
 }

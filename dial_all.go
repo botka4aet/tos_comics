@@ -17,6 +17,9 @@ func dial_all() {
 
 	for url, _ := range сheck {
 		sem.Acquire()
+		if gmodes {
+			url = clear_url(url)
+		}
 		go func() {
 			defer sem.Release()
 			fmt.Println("Bruteforcing ", url)

@@ -17,6 +17,9 @@ func dial_one() {
 	defer ff.Close()
 
 	for url, _ := range сheck {
+		if gmodes {
+			url = clear_url(url)
+		}
 		fmt.Println("Bruteforcing ", url)
 		suffix, runes := get_suffix_rune(url)
 
