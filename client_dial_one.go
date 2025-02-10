@@ -2,7 +2,6 @@ package main
 
 import (
 	"crypto/tls"
-	"fmt"
 	"net"
 //	"runtime"
 	"strings"
@@ -10,13 +9,13 @@ import (
 )
 
 func dial_one(url *string) (code string) {
-	fmt.Println("Bruteforcing ", *url)
+	logmes(2,"Solving with dial - "+*url,"")
 	suffix, runes := get_suffix_rune(url)
 
 	ch := make(chan string, 50)
 	ch_close := make(chan bool)
 
-	for i := 0; i < 500; i++ {
+	for i := 0; i < 400; i++ {
 		//		for i := 0; i < runtime.NumCPU(); i++ {
 		go func() {
 			var answer string

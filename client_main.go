@@ -36,16 +36,17 @@ func client_main() {
 	for {
 		task, err := c_get_link()
 		if err != nil {
-			fmt.Println(err)
+			logmes(1,"Can't get task", err.Error())
 			continue
 		}
+		logmes(2,"Got task - "+task.Link,"")
 		switch cconfig.Brute_mode {
 		case 1:
-			dial_one(&task.Link)
+			task.Code = dial_one(&task.Link)
 		case 2:
-			httpc_one(&task.Link)
+			task.Code = httpc_one(&task.Link)
 		default:
-			httpc_one_fh(&task.Link)
+			task.Code = httpc_one_fh(&task.Link)
 		}
 		for {
 			if c_send_result(task) { break }
@@ -72,7 +73,8 @@ func ch_scramble_o(suffix string, runes *[]rune, step int, ch chan string, ch_cl
 			counter_g++
 			if counter_g >= speed_counter {
 				counter_g = 0
-				fmt.Printf("%vSpeed - %.2f per second\n", time.Now().Format("[15:04:05]"), float64(speed_counter)/time.Since(timer_g).Seconds())
+				message := 	fmt.Sprintf("Speed - %.2f per second", float64(speed_counter)/time.Since(timer_g).Seconds())
+				logmes(8,message,"")
 				timer_g = time.Now()
 			}
 		}

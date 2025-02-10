@@ -20,6 +20,9 @@ func c_get_link() (data Task, err error){
 }
 
 func c_send_result(result Task) (good bool){
+	if result.Code == "" {
+		return true
+	}
 	out, err := json.Marshal(result)
 	if err != nil {
 		log.Printf("Error: Struct convert: %v", err)

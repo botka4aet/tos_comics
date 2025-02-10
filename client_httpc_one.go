@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"github.com/valyala/fasthttp"
 	"net/http"
 	"runtime"
@@ -9,7 +8,7 @@ import (
 )
 
 func httpc_one(url *string) (code string) {
-	fmt.Println("Bruteforcing ", *url)
+	logmes(2,"Solving with standart http - "+*url,"")
 	suffix, runes := get_suffix_rune(url)
 
 	ch := make(chan string, 50)
@@ -53,7 +52,7 @@ func httpc_one(url *string) (code string) {
 }
 
 func httpc_one_fh(url *string) (code string) {
-	fmt.Println("Bruteforcing ", *url)
+	logmes(2,"Solving with fast http - "+*url,"")
 	suffix, runes := get_suffix_rune(url)
 
 	ch := make(chan string, 50)

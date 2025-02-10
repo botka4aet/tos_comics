@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"log"
 	"math/rand"
 	"net/http"
 	"strconv"
@@ -38,7 +37,7 @@ func send_link(w http.ResponseWriter, req *http.Request) {
 	var result Task
 	err := json.NewDecoder(req.Body).Decode(&result)
 	if err != nil {
-		log.Printf("Error: decoding json: %v", err)
+		logmes(1,"Decoding Json from POST", err.Error())
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	} else {
@@ -68,14 +67,14 @@ func get_task(w http.ResponseWriter, req *http.Request) {
 	//Пытаемся отправить ответ
 	err := json.NewEncoder(w).Encode(new_task)
 	if err != nil {
-		log.Printf("Error: encode error: %v", err)
+		logmes(1,"New task encode", err.Error())
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	//Добавляем в список
 	TaskList[new_task.Link] = new_task.Secret
 	queue(*new_task,1)
-	log.Printf("Info: send task: %v", new_task.Link)
+	logmes(2,"Send task "+new_task.Link, "")
 }
 
 
