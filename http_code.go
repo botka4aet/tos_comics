@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"net"
 	"net/http"
 	"log"
 )
@@ -25,11 +26,20 @@ func c_send_result(result Task) (good bool){
 		return
 	}
 
-	req, err := http.NewRequest("POST", "http://"+cconfig.ServerIp + cconfig.ServerPort + "/send_link", bytes.NewBuffer([]byte(out)))
+	req, err := http.NewRequest("POST", "http://"+cconfig.ServerIp + cconfig.ServerPort + "/send_result", bytes.NewBuffer([]byte(out)))
+	if err != nil {
+		log.Printf("Error: Creating POST: %v", err)
+		return
+	}
+	req.Header.Add("Content-Type", "application/json")
+	client := &http.Client{}
+	res, err := client.Do(req)
 	if err != nil {
 		log.Printf("Error: Post result: %v", err)
 		return
 	}
+	
+	defer res.Body.Close()
 	err = json.NewDecoder(req.Body).Decode(&result)
 	if err != nil {
 		log.Printf("Error: decoding json: %v", err)
@@ -39,4 +49,17 @@ func c_send_result(result Task) (good bool){
 		good = true
 	}
 	return
+}
+
+// Get preferred outbound ip of this machine
+func GetOutboundIP() net.IP {
+    conn, err := net.Dial("udp", "8.8.8.8:80")
+    if err != nil {
+        log.Fatal(err)
+    }
+    defer conn.Close()
+
+    localAddr := conn.LocalAddr().(*net.UDPAddr)
+
+    return localAddr.IP
 }

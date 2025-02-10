@@ -31,6 +31,7 @@ var sem = Semaphore{
 }
 
 func client_main() {
+	defer wg.Done()
 	fmt.Println(runtime.NumCPU())
 	for {
 		task, err := c_get_link()

@@ -21,10 +21,11 @@ type Task struct {
 }
 
 func server_main() {
+	defer wg.Done()
 	r := mux.NewRouter()
 
-	r.HandleFunc("/get_task", get_task).Methods("GET")
 	r.HandleFunc("/send_result", send_link).Methods("POST")
+	r.HandleFunc("/get_task", get_task).Methods("GET")
 
 	srv := &http.Server{
 		Addr:    cconfig.ServerPort,
