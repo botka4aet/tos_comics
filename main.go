@@ -12,8 +12,8 @@ func main() {
 
 	if cconfig.Server & 1 > 0 {
 		logmes(8,"Starting server with port "+cconfig.ServerPort, "")
+		wg.Add(2)
 		server_init()
-		wg.Add(1)
 		go server_main()
 	}
 	if cconfig.Server & 1 > 0 {

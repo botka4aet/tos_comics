@@ -2,16 +2,17 @@ package main
 
 import (
 	"bufio"
-	"log"
 	"net/http"
 	"os"
 	"strings"
-
+	"time"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"gorm.io/gorm/logger"
 )
+
+var ch_sql = make(chan Task, 50)
 
 type FileId struct {
 	gorm.Model
@@ -24,8 +25,32 @@ func server_init() {
 	fill_base_solved()
 	fill_base_empty()
 	queue(Task{},3)
+	go update_sql()
 }
 
+func update_sql(){
+	defer wg.Done()
+	db, err := gorm.Open(sqlite.Open("database.db"), &gorm.Config{})
+	if err != nil {
+		logmes(1,"Can't open base", err.Error())
+		return
+	}
+	db.AutoMigrate(&FileId{})
+	for {
+		task, ok := <-ch_sql
+		if !ok {
+			return
+		}
+		if task.Link == "" {
+			continue
+		}
+		if task.Code == "" {
+			db.Model(&FileId{}).Where("Link = ?", task.Link).Update("code", nil)
+		} else {
+			db.Model(&FileId{}).Where("Link = ?", task.Link).Update("code", task.Code)
+		}
+	}
+}
 
 func get_link_sql() (link_result string) {
 	db, err := gorm.Open(sqlite.Open("database.db"), &gorm.Config{
@@ -33,6 +58,7 @@ func get_link_sql() (link_result string) {
 		Logger: logger.Default.LogMode(logger.Error),
 	})
 	if err != nil {
+		logmes(1,"Can't open base", err.Error())
 		return
 	}
 	db.AutoMigrate(&FileId{})
@@ -42,9 +68,7 @@ func get_link_sql() (link_result string) {
 		return
 	}
 	link_result = result[0].Link
-	db.Model(&FileId{}).Where("Link = ?", link_result).Update("code", nil)
-	//db.Order("updated_at").First(&result)
-	//Закрываем соединения, тк позже база переоткрывается
+
 	sqlDB, _ := db.DB()
 	sqlDB.Close()
 	return
@@ -57,7 +81,7 @@ func fill_base_solved() {
 		Logger: logger.Default.LogMode(logger.Error),
 	})
 	if err != nil {
-		return
+		logmes(1,"Can't open base", err.Error())
 	}
 	sqlDB, _ := db.DB()
 	defer sqlDB.Close()
@@ -65,7 +89,7 @@ func fill_base_solved() {
 
 	file, err := os.Open("txtfiles\\links.txt")
 	if err != nil {
-		log.Fatal(err)
+		logfatal("Can't open file with links", err)
 	}
 	defer file.Close()
 
@@ -92,6 +116,7 @@ func fill_base_empty() {
 		Logger: logger.Default.LogMode(logger.Error),
 	})
 	if err != nil {
+		logmes(1,"Can't open base", err.Error())
 		return
 	}
 	sqlDB, _ := db.DB()
@@ -100,7 +125,7 @@ func fill_base_empty() {
 
 	file, err := os.Open("txtfiles\\check.txt")
 	if err != nil {
-		log.Fatal(err)
+		logfatal("Can't open file with links", err)
 	}
 	defer file.Close()
 
@@ -140,7 +165,7 @@ func queue(info Task, mode uint8) {
 		Logger: logger.Default.LogMode(logger.Error),
 	})
 	if err != nil {
-		log.Println(err,info,mode)
+		logmes(1,"Can't open base with queue", err.Error())
 		return
 	}
 	sqlDB, _ := db.DB()
@@ -152,15 +177,16 @@ func queue(info Task, mode uint8) {
 		var result []FileId
 		db.Where("Link = ?", info.Link).Delete(&result)
 	} else if mode == 3 {
-		rows, _ := db.Model(&FileId{}).Rows() 
+		ctime := time.Now().Add(time.Duration(-24) * time.Hour)
+		db.Where("updated_at < ?", ctime).Delete(&FileId{})
+
+		rows, _ := db.Model(&FileId{}).Rows()
+		defer rows.Close()
 		for rows.Next() {
 			var result FileId
 			db.ScanRows(rows, &result)
 			TaskList[result.Link] = result.Code	
 		}
-		// for i,j  := range TaskList {
-		// 	println(i,j)
-		// }	
 	}
 	return
 }

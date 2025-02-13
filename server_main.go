@@ -41,15 +41,16 @@ func send_link(w http.ResponseWriter, req *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	} else {
+		answer := &Task{Answer: 0}
 		//Проверяем - есть ли такая запись в очереди
-		result.Answer = 0
 		tasks, ok := TaskList[result.Link]
 		if ok && tasks == result.Secret && check_link(result) {
-			result.Answer = 1
+			answer.Answer = 1
+			ch_sql <- result
 			delete(TaskList, result.Link)
 			queue(result,2)
 		}
-		json.NewEncoder(w).Encode(result)
+		json.NewEncoder(w).Encode(answer)
 	}
 }
 
@@ -63,7 +64,7 @@ func get_task(w http.ResponseWriter, req *http.Request) {
 			break
 		}
 	}
-
+	ch_sql <- *new_task
 	//Пытаемся отправить ответ
 	err := json.NewEncoder(w).Encode(new_task)
 	if err != nil {
