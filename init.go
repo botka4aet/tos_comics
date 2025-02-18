@@ -10,7 +10,7 @@ type config struct {
 	ServerPort string `json:"ServerPort"`
 	ServerIp   string `json:"ServerIp"`
 	Brute_mode uint8  `json:"brute_mode"`
-	LogLevel   uint8  `json:"log_level"`
+	LogLevel   int  `json:"log_level"`
 	Server     uint8  `json:"Server"`
 }
 

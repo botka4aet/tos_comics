@@ -33,13 +33,15 @@ var sem = Semaphore{
 func client_main() {
 	defer wg.Done()
 	fmt.Println(runtime.NumCPU())
+
 	for {
 		task, err := c_get_link()
 		if err != nil {
-			logmes(1,"Can't get task", err.Error())
+			logmes(10,"Can't get task", err.Error())
+			time.Sleep(10 * time.Second)
 			continue
 		}
-		logmes(2,"Got task - "+task.Link,"")
+		logmes(18,"Got task - "+task.Link,"")
 		switch cconfig.Brute_mode {
 		case 1:
 			task.Code = dial_one(&task.Link)
@@ -50,6 +52,8 @@ func client_main() {
 		}
 		for {
 			if c_send_result(task) { break }
+			//Если данные не получилось отправить - ждем
+			time.Sleep(10 * time.Second)
 		}
 	}
 }

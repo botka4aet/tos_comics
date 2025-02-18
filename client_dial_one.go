@@ -3,13 +3,13 @@ package main
 import (
 	"crypto/tls"
 	"net"
-//	"runtime"
+	//	"runtime"
 	"strings"
 	"time"
 )
 
 func dial_one(url *string) (code string) {
-	logmes(2,"Solving with dial - "+*url,"")
+	logmes(66, "Solving with dial - "+*url, "")
 	suffix, runes := get_suffix_rune(url)
 
 	ch := make(chan string, 50)

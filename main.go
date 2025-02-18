@@ -11,13 +11,13 @@ func main() {
 	_ = a
 
 	if cconfig.Server & 1 > 0 {
-		logmes(8,"Starting server with port "+cconfig.ServerPort, "")
+		logmes(65,"Starting server with port "+cconfig.ServerPort, "")
 		wg.Add(2)
 		server_init()
 		go server_main()
 	}
 	if cconfig.Server & 1 > 0 {
-		logmes(8,"Starting client", "")
+		logmes(66,"Starting client", "")
 		wg.Add(1)
 		go client_main()
 	}

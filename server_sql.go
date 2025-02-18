@@ -32,7 +32,7 @@ func update_sql(){
 	defer wg.Done()
 	db, err := gorm.Open(sqlite.Open("database.db"), &gorm.Config{})
 	if err != nil {
-		logmes(1,"Can't open base", err.Error())
+		logmes(9,"Can't open base", err.Error())
 		return
 	}
 	db.AutoMigrate(&FileId{})
@@ -58,7 +58,7 @@ func get_link_sql() (link_result string) {
 		Logger: logger.Default.LogMode(logger.Error),
 	})
 	if err != nil {
-		logmes(1,"Can't open base", err.Error())
+		logmes(9,"Can't open base", err.Error())
 		return
 	}
 	db.AutoMigrate(&FileId{})
@@ -81,7 +81,7 @@ func fill_base_solved() {
 		Logger: logger.Default.LogMode(logger.Error),
 	})
 	if err != nil {
-		logmes(1,"Can't open base", err.Error())
+		logmes(9,"Can't open base", err.Error())
 	}
 	sqlDB, _ := db.DB()
 	defer sqlDB.Close()
@@ -116,7 +116,7 @@ func fill_base_empty() {
 		Logger: logger.Default.LogMode(logger.Error),
 	})
 	if err != nil {
-		logmes(1,"Can't open base", err.Error())
+		logmes(9,"Can't open base", err.Error())
 		return
 	}
 	sqlDB, _ := db.DB()
@@ -165,7 +165,7 @@ func queue(info Task, mode uint8) {
 		Logger: logger.Default.LogMode(logger.Error),
 	})
 	if err != nil {
-		logmes(1,"Can't open base with queue", err.Error())
+		logmes(9,"Can't open base with queue", err.Error())
 		return
 	}
 	sqlDB, _ := db.DB()

@@ -37,7 +37,7 @@ func send_link(w http.ResponseWriter, req *http.Request) {
 	var result Task
 	err := json.NewDecoder(req.Body).Decode(&result)
 	if err != nil {
-		logmes(1,"Decoding Json from POST", err.Error())
+		logmes(9,"Decoding Json from POST", err.Error())
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	} else {
@@ -68,14 +68,14 @@ func get_task(w http.ResponseWriter, req *http.Request) {
 	//Пытаемся отправить ответ
 	err := json.NewEncoder(w).Encode(new_task)
 	if err != nil {
-		logmes(1,"New task encode", err.Error())
+		logmes(9,"New task encode", err.Error())
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	//Добавляем в список
 	TaskList[new_task.Link] = new_task.Secret
 	queue(*new_task,1)
-	logmes(2,"Send task "+new_task.Link, "")
+	logmes(17,"Send task "+new_task.Link, "")
 }
 
 
