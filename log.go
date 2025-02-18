@@ -28,7 +28,7 @@ func logmes_text(lvl int) (result string) {
 			break
 		}
 	}
-	return result + ":"
+	return
 }
 
 func logmes(lvl int, mes string, err string) {

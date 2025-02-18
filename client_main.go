@@ -78,7 +78,7 @@ func ch_scramble_o(suffix string, runes *[]rune, step int, ch chan string, ch_cl
 			if counter_g >= speed_counter {
 				counter_g = 0
 				message := 	fmt.Sprintf("Speed - %.2f per second", float64(speed_counter)/time.Since(timer_g).Seconds())
-				logmes(8,message,"")
+				logmes(66,message,"")
 				timer_g = time.Now()
 			}
 		}
